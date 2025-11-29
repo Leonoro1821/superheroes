@@ -27,20 +27,24 @@ class SuperheroController extends Controller
     /**
      * Guardar un nuevo superhéroe.
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'real_name' => 'required',
-            'hero_name' => 'required',
-            'photo_url' => 'required|url',
-            'info' => 'required'
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'name' => 'required',
+        'superpower' => 'required',
+        'photo' => 'required|image',
+    ]);
 
-        Superhero::create($request->all());
+    $path = $request->file('photo')->store('superheroes', 'public');
 
-        return redirect()->route('superheroes.index')
-            ->with('success', 'Superhéroe registrado correctamente');
-    }
+    Superhero::create([
+        'name' => $request->name,
+        'superpower' => $request->superpower,
+        'photo' => $path,
+    ]);
+
+    return redirect()->route('superheroes.index');
+}
 
     /**
      * Mostrar un superhéroe por ID.
@@ -63,31 +67,49 @@ class SuperheroController extends Controller
     /**
      * Actualizar la información del superhéroe.
      */
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'real_name' => 'required',
-            'hero_name' => 'required',
-            'photo_url' => 'required|url',
-            'info' => 'required'
-        ]);
+   public function update(Request $request, Superhero $superhero)
+{
+    $request->validate([
+        'name' => 'required',
+        'superpower' => 'required',
+        'photo' => 'image'
+    ]);
 
-        $superhero = Superhero::findOrFail($id);
-        $superhero->update($request->all());
-
-        return redirect()->route('superheroes.index')
-            ->with('success', 'Superhéroe actualizado correctamente');
+    if ($request->hasFile('photo')) {
+        $path = $request->file('photo')->store('superheroes', 'public');
+        $superhero->photo = $path;
     }
+
+    $superhero->name = $request->name;
+    $superhero->superpower = $request->superpower;
+
+    $superhero->save();
+
+    return redirect()->route('superheroes.index');
+}
+
 
     /**
      * Eliminar un superhéroe.
      */
-    public function destroy($id)
-    {
-        $superhero = Superhero::findOrFail($id);
-        $superhero->delete();
+   public function destroy(Superhero $superhero)
+{
+    $superhero->delete();
 
-        return redirect()->route('superheroes.index')
-            ->with('success', 'Superhéroe eliminado correctamente');
-    }
+    return redirect()->route('superheroes.index');
+}
+public function deleted()
+{
+    $heroes = Superhero::onlyTrashed()->get();
+
+    return view('superheroes.deleted', compact('heroes'));
+}
+public function restore($id)
+{
+    $hero = Superhero::onlyTrashed()->where('id', $id)->first();
+    $hero->restore();
+
+    return redirect()->route('superheroes.deleted');
+}
+
 }

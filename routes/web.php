@@ -14,3 +14,5 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::resource('superheroes', SuperheroController::class);
+Route::get('/superheroes/deleted', [SuperheroController::class, 'deleted'])->name('superheroes.deleted');
+Route::get('/superheroes/restore/{id}', [SuperheroController::class, 'restore'])->name('superheroes.restore');
